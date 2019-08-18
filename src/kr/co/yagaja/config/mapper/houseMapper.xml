@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.yagaja.config.mapper.houseMapper">
+
+
+	<sql id="select-sql">
+		SELECT  house_id,
+				house_type,
+				house_location,
+				house_name,  
+				house_price
+				
+		FROM house
+	</sql>
+		
+	
+   <resultMap type="house" id="house-resultmap">
+      <id column="house_id" property="houseId"/>
+      <result column="house_type" property="type"/>
+      <result column="house_location" property="location"/>
+      <result column="house_name" property="houseName"/>
+      <result column="house_price" property="price"/>
+   </resultMap>
+   
+   
+   <resultMap type="house" id="house-reservation-resultmap" extends="house-resultmap">
+      <collection  ofType="reservation" property="reservationList">
+         <result column="rent_no" property="rentNo"/>
+         <result column="start_rent_date" property="startRentDate"/>
+         <result column="end_rent_date" property="endRentDate"/>
+         <result column="rent_time" property="rentTime"/>
+         <result column="member_id" property="memberId"/>
+         <result column="house_id" property="houseId"/>
+      </collection>
+   </resultMap>
+   
+   
+   
+      <select id="selectHouseById" parameterType="String" resultMap="house-reservation-resultmap">
+         SELECT h.house_id, h.house_type, h.house_name, h.house_location, h.house_price,
+                      r.rent_no, r.start_rent_date, r.end_rent_date, r.rent_time, r.member_id, r.house_id
+         FROM house h, Reservation r
+         WHERE h.house_id = r.house_id(+) AND h.house_id = #{value} order by r.start_rent_date ASC
+	</select>
+	
+
+	
+	
+	
+	
+	
+	
+	
+	<!-- resultMap의 extends로 기존 resulMap 설정을 상속 -->
+	<resultMap type="house" id="house-picture-resultmap" extends="house-resultmap">
+		<collection property="pictureList" resultMap="kr.co.yagaja.config.mapper.pictureMapper.picture-resultmap"/>
+		 
+	</resultMap>
+		
+	
+	
+	<sql id="select-house-picture-join">
+		SELECT  h.house_id,
+				h.house_type,
+				h.house_location,
+				h.house_name,  
+				h.house_price,	  
+				p.picture_no,
+			   	p.picture_name	
+		FROM  house h,picture p
+	</sql>
+
+
+	
+
+	<!-- 전체 select : HOUSE와 PICTURE JOIN -->
+	<select id="selectHouseByList" resultMap="house-picture-resultmap">
+		<include refid="select-house-picture-join"/>
+		WHERE h.house_id=p.house_id(+)
+	</select>
+	
+ 	
+ 	<!-- location select join -->
+	<select id="selectHouseBylocation" parameterType="String" resultMap="house-picture-resultmap">
+		<include refid="select-house-picture-join"/>   
+		WHERE h.house_id = p.house_id(+)
+		AND h.house_location like '%'||#{value}||'%'
+		ORDER BY h.house_id
+	</select>  
+	
+	
+		
+	
+	<select id="selectHouseByKeyword" parameterType="hashmap" resultMap="house-picture-resultmap">
+		<include refid="select-house-picture-join"/>
+			<where>
+				h.house_id = p.house_id(+)
+				<if test="type == null">
+					AND h.house_location = #{location}
+				</if> 
+				<if test="type != null">
+					AND h.house_location = #{location}
+					AND h.house_type like '%'||#{type}||'%'
+				</if>
+			</where>
+	</select> 
+		<select id="selectHouseByPriceLow" parameterType="hashmap" resultMap="house-picture-resultmap">
+		<include refid="select-house-picture-join"/>
+			<where>
+				h.house_id = p.house_id(+)
+				<if test="type == null">
+					AND h.house_location = #{location}
+				</if> 
+				<if test="type != null">
+					AND h.house_location = #{location}
+					AND h.house_type like '%'||#{type}||'%'
+				</if>
+			</where>
+			order by h.house_price ASC
+	</select> 
+	
+	<select id="selectHouseByPriceHigh" parameterType="hashmap" resultMap="house-picture-resultmap">
+		<include refid="select-house-picture-join"/>
+			<where>
+				h.house_id = p.house_id(+)
+				<if test="type == null">
+					AND h.house_location = #{location}
+				</if> 
+				<if test="type != null">
+					AND h.house_location = #{location}
+					AND h.house_type like '%'||#{type}||'%'
+				</if>
+			</where>
+			order by h.house_price DESC
+	</select> 
+	
+	<select id="selectHouseList" parameterType="map" resultMap="house-picture-resultmap">
+      
+      <![CDATA[
+		select house_id, house_type,house_location,house_name,house_price,picture_name 
+		from(
+		  select rownum rnum,house_id,house_type,house_location,house_name,house_price,picture_name 
+		  from(
+		  
+		      SELECT  h.house_id,
+				h.house_type,
+				h.house_location,
+				h.house_name,  
+				h.house_price,	  
+				p.picture_no,
+			   	p.picture_name	
+		  FROM  house h,picture p
+		  where h.house_id=p.house_id(+)
+		  AND h.house_location like '%'||#{location}||'%'
+		  And h.house_type like '%'||#{type}||'%'
+		  ORDER BY h.house_id
+		  
+		)
+		where rownum<=#{endItemNum}
+       
+		)
+		where rnum>=#{beginItemNum}
+
+      ]]>
+   </select>
+	
+	
+	
+	<select id="selectHouseCount" resultType="_int">
+		select count(*) from
+		house
+	</select>
+	
+	<select id="selectHouseByMemberId" parameterType="String" resultMap="house-reservation-resultmap">
+         SELECT h.house_id, h.house_type, h.house_name, h.house_location, h.house_price,
+                      r.rent_no, r.start_rent_date, r.end_rent_date, r.rent_time, r.member_id, r.house_id
+         FROM house h, Reservation r
+         WHERE h.house_id = r.house_id(+) 
+         AND r.member_id = #{value}
+	</select>
+	
+	
+	
+	
+	  <select id="selectHouseByPriceHighList" parameterType="map" resultMap="house-picture-resultmap">
+      
+      <![CDATA[
+      select house_id, house_type,house_location,house_name,house_price,picture_name 
+      from(
+        select rownum rnum,house_id,house_type,house_location,house_name,house_price,picture_name 
+        from(
+        
+            SELECT  h.house_id,
+            h.house_type,
+            h.house_location,
+            h.house_name,  
+            h.house_price,     
+            p.picture_no,
+               p.picture_name   
+        FROM  house h,picture p
+        where h.house_id=p.house_id(+)
+        AND h.house_location like '%'||#{loaction}||'%'
+        And h.house_type like '%'||#{type}||'%'
+        
+        ORDER BY h.house_price desc
+        
+      )
+      where rownum<=#{endItemNum}
+       
+      )
+      where rnum>=#{beginItemNum}
+
+      ]]>
+   </select>
+   
+   
+      <select id="selectHouseByPriceLowList" parameterType="map" resultMap="house-picture-resultmap">
+      
+      <![CDATA[
+      select house_id, house_type,house_location,house_name,house_price,picture_name 
+      from(
+        select rownum rnum,house_id,house_type,house_location,house_name,house_price,picture_name 
+        from(
+        
+            SELECT  h.house_id,
+            h.house_type,
+            h.house_location,
+            h.house_name,  
+            h.house_price,     
+            p.picture_no,
+               p.picture_name   
+        FROM  house h,picture p
+        where h.house_id=p.house_id(+)
+        AND h.house_location like '%'||#{loaction}||'%'
+        And h.house_type like '%'||#{type}||'%'
+        
+        ORDER BY h.house_price 
+        
+      )
+      where rownum<=#{endItemNum}
+       
+      )
+      where rnum>=#{beginItemNum}
+
+      ]]>
+   </select>
+</mapper>

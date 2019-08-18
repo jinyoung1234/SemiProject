@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.yagaja.config.mapper.pictureMapper">
+
+
+	<resultMap id="picture-resultmap" type="picture">
+		<id column="house_id" property="houseId"/>
+		<result column="picture_name" property="pictureName"/>
+		<result column="picture_no" property="pictureNo"/>
+	</resultMap>
+
+	<sql id="select-house-picture-join">
+		SELECT   h.house_id,
+				h.house_type,
+				h.house_location,
+				h.house_name,  
+				h.house_price,	  
+				p.picture_no,
+			   	p.picture_name	
+		FROM  house h,picture p
+	</sql>
+	
+	<!-- House id 와 일치하는 사진들 -->
+	<select id="selectPictureList" resultMap="picture-resultmap">
+		<include refid="select-house-picture-join"/>   
+			WHERE p.house_id = h.house_id 
+			and p.house_id = #{value}
+	
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+</mapper>

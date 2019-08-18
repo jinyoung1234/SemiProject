@@ -1,0 +1,10 @@
+@CHARSET "UTF-8";
+#div_top
+{
+	width:100%;
+	height:40px;
+	background-color:#99b3ff;
+	font-family:Fantasy; 
+	font-size:30px;
+	color:white;
+}
